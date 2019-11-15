@@ -182,6 +182,7 @@
 
 pub use trie::Trie;
 pub use trie::TrieBuilder;
+pub use trie::TriePartial;
 
 mod internal_data_structure;
 pub mod trie;

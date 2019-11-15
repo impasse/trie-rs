@@ -1,4 +1,5 @@
 use super::Trie;
+use super::TriePartial;
 use louds_rs::LoudsNodeNum;
 
 impl<Label: Ord + Clone> Trie<Label> {
@@ -21,6 +22,30 @@ impl<Label: Ord + Clone> Trie<Label> {
             }
         }
         false
+    }
+
+    pub fn match_partial<Arr: AsRef<[Label]>>(&self, query: Arr) -> Option<TriePartial<Label>> {
+        let mut cur_node_num = LoudsNodeNum(1);
+
+        for (i, chr) in query.as_ref().iter().enumerate() {
+            let children_node_nums = self.children_node_nums(cur_node_num);
+            let res = self.bin_search_by_children_labels(chr, &children_node_nums[..]);
+
+            match res {
+                Ok(j) => {
+                    let child_node_num = children_node_nums[j];
+                    if i == query.as_ref().len() - 1 {
+                        return Some(TriePartial {
+                            trie: &self,
+                            cur_node_num: child_node_num,
+                        });
+                    };
+                    cur_node_num = child_node_num;
+                }
+                Err(_) => return None,
+            }
+        }
+        None
     }
 
     /// # Panics
@@ -91,7 +116,7 @@ impl<Label: Ord + Clone> Trie<Label> {
         results
     }
 
-    fn children_node_nums(&self, node_num: LoudsNodeNum) -> Vec<LoudsNodeNum> {
+    pub fn children_node_nums(&self, node_num: LoudsNodeNum) -> Vec<LoudsNodeNum> {
         self.louds
             .parent_to_children(node_num)
             .iter()
@@ -99,7 +124,7 @@ impl<Label: Ord + Clone> Trie<Label> {
             .collect()
     }
 
-    fn bin_search_by_children_labels(
+    pub fn bin_search_by_children_labels(
         &self,
         query: &Label,
         children_node_nums: &[LoudsNodeNum],
@@ -111,7 +136,7 @@ impl<Label: Ord + Clone> Trie<Label> {
         self.trie_labels[(node_num.0 - 2) as usize].label.clone()
     }
 
-    fn is_terminal(&self, node_num: LoudsNodeNum) -> bool {
+    pub fn is_terminal(&self, node_num: LoudsNodeNum) -> bool {
         self.trie_labels[(node_num.0 - 2) as usize].is_terminal
     }
 }
